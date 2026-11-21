@@ -147,6 +147,35 @@
   .consejo { margin-top: 10px; font-size: 13px; color: var(--suave); background: var(--tarjeta); border: 1px dashed var(--linea); border-radius: 12px; padding: 9px 12px; }
   .paquete .estado { flex: none; white-space: nowrap; }
 
+  /* Paquete para recoger (Inicio y pestaña Paquetes) */
+  .recoger { background: var(--tarjeta); border: 2px solid var(--ambar); border-radius: 20px; padding: 16px; display: grid; gap: 10px; box-shadow: var(--sombra); min-width: 0; }
+  .recoger.urge { border-color: var(--rojo); }
+  .recoger + .recoger, .proximo + .recoger, .recoger + .proximo { margin-top: 10px; }
+  .recoger .eti { font: 700 12px/1 var(--f-texto); text-transform: uppercase; letter-spacing: .08em; color: var(--ambar); }
+  .recoger.urge .eti { color: var(--rojo); }
+  .recoger .fila-p { display: flex; align-items: flex-end; gap: 14px; min-width: 0; }
+  .recoger .num { flex: none; font: 800 44px/0.9 var(--f-titulo); font-variant-numeric: tabular-nums; color: var(--ambar); }
+  .recoger.urge .num { color: var(--rojo); }
+  .recoger .num small { display: block; font: 600 12.5px/1.2 var(--f-texto); margin-top: 4px; }
+  .recoger .que { font: 700 17px/1.25 var(--f-titulo); min-width: 0; overflow-wrap: anywhere; }
+  .recoger .que span { display: block; font: 500 13px/1.3 var(--f-texto); color: var(--suave); margin-top: 3px; }
+  .recoger .datos-r { display: grid; gap: 6px; font-size: 14px; min-width: 0; }
+  .recoger .datos-r div { display: flex; gap: 8px; min-width: 0; }
+  .recoger .datos-r div > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+  .recoger .codigo { font: 800 20px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: .12em; user-select: all; }
+  .recoger .botones { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+  .recoger .botones .btn { padding: 11px 12px; font-size: 14px; }
+  .recoger .botones a { display: grid; place-items: center; padding: 0 12px; border-radius: 14px; background: var(--gris-suave); color: var(--tinta); font-weight: 600; font-size: 14px; text-decoration: none; }
+  .btn-ok.confirmar { background: var(--verde); }
+  .barras { display: block; width: 100%; border: 0; padding: 10px; background: #ffffff; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--linea); }
+  .barras img { display: block; width: 100%; height: auto; }
+  .barras small { display: block; margin-top: 6px; font-size: 12px; color: #5b6670; text-align: center; }
+  .barras.grande { position: fixed; inset: 0; z-index: 50; border-radius: 0; display: grid; place-content: center; padding: max(24px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(24px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); }
+  .barras.grande img { width: min(92vw, 640px); }
+  .camino-ini { display: flex; gap: 10px; align-items: center; background: var(--tarjeta); border-radius: 14px; padding: 9px 12px; font-size: 14px; box-shadow: var(--sombra); min-width: 0; margin-top: 8px; }
+  .camino-ini span:nth-child(2) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .camino-ini b { flex: none; font-size: 12.5px; color: var(--marca); }
+
   /* Ficha */
   .ficha-cab { background: var(--tarjeta); border-radius: 20px; box-shadow: var(--sombra); padding: 18px; display: grid; gap: 14px; }
   .ficha-cab .arriba { display: flex; gap: 12px; align-items: center; }
@@ -282,7 +311,8 @@ var api = {
   hecho: function (id) { return cambiar('hecho', id); },
   pendiente: function (id) { return cambiar('pendiente', id); },
   borrar: function (id) { return cambiar('borrar', id); },
-  borrarRec: function (id) { return cambiar('borrarRec', id); }
+  borrarRec: function (id) { return cambiar('borrarRec', id); },
+  recogido: function (id) { return cambiar('recogido', id); }
 };
 
 /* ============ NAVEGACIÓN (el botón «atrás» se queda dentro de la app) ============ */
@@ -367,6 +397,7 @@ function pintar() {
   else if (vista.tab === 'cumples') { $('titulo').textContent = 'Cumpleaños'; p.innerHTML = demo + cumplesHtml(); }
   else { $('titulo').textContent = 'Mi Asistente'; p.innerHTML = demo + inicioHtml(); prepararInicio(); }
   Array.prototype.forEach.call(p.querySelectorAll('[data-id]'), function (el) { el.onclick = function () { abrirFicha(el.getAttribute('data-id')); }; });
+  prepararPaquetes();
 }
 
 function inicioHtml() {
@@ -376,12 +407,16 @@ function inicioHtml() {
   var semana = pend.filter(function (f) { return f.dias >= 0 && f.dias <= 7; }).length;
   var mes = pend.filter(function (f) { return f.dias >= 0 && f.dias <= 30; }).length;
   var h = '';
+  var recs = paquetesRecoger(), urgentes = recs.filter(function (q) { return q.quedan != null && q.quedan <= 1; });
+  h += urgentes.map(recogerHtml).join('');
   if (prox) {
     h += '<button class="proximo" data-id="' + esc(prox.id) + '"><span class="eti">Lo próximo</span>' +
       '<span class="fila-p"><span class="num">' + (prox.dias <= 0 ? (prox.dias === 0 ? 'Hoy' : -prox.dias) : prox.dias) + '<small>' + (prox.dias === 0 ? '' : prox.dias < 0 ? 'días vencido' : prox.dias === 1 ? 'día' : 'días') + '</small></span>' +
       '<span class="que">' + esc(prox.que) + '<span>' + cat(prox).e + ' ' + (edadTexto(prox) ? edadTexto(prox) + ' · ' : '') + bonita(prox.fecha) + '</span></span></span>' +
       '<span class="barra"><i style="width:' + Math.round(progreso(prox) * 100) + '%"></i></span></button>';
   }
+  h += recs.filter(function (q) { return urgentes.indexOf(q) < 0; }).map(recogerHtml).join('');
+  h += caminoInicioHtml();
   h += '<div class="contadores">' +
     '<button class="contador alerta" data-foco="vencido" aria-pressed="' + (vista.foco === 'vencido') + '"><b>' + vencido + '</b><span>Vencido</span></button>' +
     '<button class="contador aviso" data-foco="semana" aria-pressed="' + (vista.foco === 'semana') + '"><b>' + semana + '</b><span>Esta semana</span></button>' +
@@ -463,6 +498,59 @@ function calendarioHtml() {
   return h + '</div>';
 }
 
+/* ---- Paquetes para recoger: tarjeta grande con sitio, código y último día ---- */
+function paquetesRecoger() {
+  return (paquetes || []).filter(function (q) { return q.tipo !== 'camino' && !q.ejemplo; }).map(function (q) {
+    var c = Object.assign({}, q);
+    c.quedan = q.ultimo ? diasHasta(q.ultimo) : null;
+    return c;
+  }).filter(function (q) { return !q.limite || diasHasta(q.limite) >= 0; })
+    .sort(function (a, b) { return (a.quedan == null ? 999 : a.quedan) - (b.quedan == null ? 999 : b.quedan); });
+}
+function diaSemana(t) { var d = aFecha(t); return DIAS_SEM[d.getDay()] + ' ' + d.getDate() + ' ' + MESC[d.getMonth()]; }
+function recogerHtml(q) {
+  var n = q.quedan, urge = n != null && n <= 1 || /fallida|aduana|pago|direcci/i.test(q.estado);
+  var num = n == null ? '📦' : n <= 0 ? 'Hoy' : n;
+  var bajo = n == null || n <= 0 ? '' : n === 1 ? 'día' : 'días';
+  var titulo = q.producto || q.asunto;
+  var sub = q.estado !== 'Para recoger' ? q.estado : (q.remitente || 'Paquete') + (q.fecha ? ' · llegó el ' + diaSemana(q.fecha) : '');
+  var h = '<article class="recoger' + (urge ? ' urge' : '') + '"><span class="eti">📦 ' + (n < 0 ? 'Recógelo hoy, si aún estás a tiempo' : n === 0 ? 'Hoy es el último día para recogerlo' : n === 1 ? 'Recógelo mañana como tarde' : 'Paquete para recoger') + '</span>' +
+    '<div class="fila-p"><span class="num">' + num + '<small>' + bajo + '</small></span><span class="que">' + esc(titulo) + '<span>' + esc(sub) + '</span></span></div>' +
+    '<div class="datos-r">' +
+    (q.lugar ? '<div><span aria-hidden="true">📍</span><span>' + esc(q.lugar) + '</span></div>' : '') +
+    (q.codigo ? '<div><span aria-hidden="true">🔑</span><span>Código de recogida: <span class="codigo">' + esc(q.codigo) + '</span></span></div>' : '') +
+    (q.barras ? '<button class="barras" data-barras aria-label="Código de barras: toca para verlo en grande"><img src="' + esc(q.barras) + '" alt="Código de barras de recogida" loading="lazy" onerror="this.parentNode.hidden=true"><small>Toca para verlo en grande y enseñarlo en el mostrador</small></button>' : '') +
+    (q.ultimo ? '<div><span aria-hidden="true">📅</span><span>Último día: <b>' + diaSemana(q.ultimo) + '</b>' + (q.limite && q.limite !== q.ultimo ? ' <span style="color:var(--suave)">(el aviso dice «antes del ' + aFecha(q.limite).getDate() + '»)</span>' : '') + '</span></div>' : '') +
+    '</div><div class="botones"><button class="btn btn-ok" data-recogido="' + esc(q.id) + '">✓ Ya lo he recogido</button>' +
+    (q.enlace ? '<a href="' + esc(q.enlace) + '" target="_blank" rel="noopener">Correo</a>' : '') + '</div></article>';
+  return h;
+}
+function caminoInicioHtml() {
+  var l = (paquetes || []).filter(function (q) { return q.tipo === 'camino' && !q.ejemplo; });
+  return l.slice(0, 3).map(function (q) {
+    return '<div class="camino-ini"><span aria-hidden="true">🚚</span><span>' + esc(q.asunto) + '</span><b>' + esc(q.estado) + '</b></div>';
+  }).join('');
+}
+function prepararPaquetes() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-barras]'), function (b) {
+    b.onclick = function () {
+      var g = b.classList.toggle('grande');
+      b.querySelector('small').textContent = g ? 'Toca para cerrar' : 'Toca para verlo en grande y enseñarlo en el mostrador';
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-recogido]'), function (b) {
+    b.onclick = function () {
+      if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = 'Toca otra vez para confirmar'; b.classList.add('confirmar'); setTimeout(function () { if (b.isConnected) { delete b.dataset.seguro; b.textContent = '✓ Ya lo he recogido'; b.classList.remove('confirmar'); } }, 4000); return; }
+      var id = b.getAttribute('data-recogido');
+      b.disabled = true; b.textContent = 'Guardando…';
+      api.recogido(id).then(function () {
+        paquetes = (paquetes || []).filter(function (q) { return q.id !== id; }); guardarCopia();
+        aviso('¡Recogido! ✓ Ya no te lo recuerdo'); pintar();
+      }, fallo);
+    };
+  });
+}
+
 function paquetesHtml() {
   if (paquetes === null) { cargarPaquetes(); return '<div class="vacio">Mirando tu correo…</div>'; }
   var recoger = paquetes.filter(function (q) { return q.tipo !== 'camino'; });
@@ -480,12 +568,18 @@ function paquetesHtml() {
   }
   var h = '';
   h += '<div class="grupo"><span>Para recoger</span><span>' + recoger.length + '</span></div>';
-  h += recoger.length ? '<div class="lista">' + recoger.map(tarjeta).join('') + '</div>' : '<div class="nada-paq">Nada pendiente de recoger ✓</div>';
+  recoger = paquetesRecoger().concat(recoger.filter(function (q) { return q.ejemplo; }));
+  h = '<div class="grupo"><span>Para recoger</span><span>' + recoger.length + '</span></div>';
+  h += recoger.length ? '<div class="lista">' + recoger.map(function (q) { return q.ejemplo ? tarjeta(q) : recogerHtml(q); }).join('') + '</div>' : '<div class="nada-paq">Nada pendiente de recoger ✓</div>';
   h += '<div class="grupo"><span>En camino</span><span>' + camino.length + '</span></div>';
   h += camino.length ? '<div class="lista">' + camino.map(tarjeta).join('') + '</div>' : '<div class="nada-paq">No hay envíos en camino</div>';
   return h;
 }
-function cargarPaquetes() { api.paquetes().then(function (l) { paquetes = l || []; guardarCopia(); if (vista.tab === 'paquetes' && !vista.ficha && !vista.editar) pintar(); }, function () { paquetes = []; aviso('No he podido mirar el correo'); }); }
+function cargarPaquetes() {
+  if (cargarPaquetes.va) return; cargarPaquetes.va = true;
+  api.paquetes().then(function (l) { cargarPaquetes.va = false; paquetes = l || []; guardarCopia(); if ((vista.tab === 'paquetes' || vista.tab === 'inicio') && !vista.ficha && !vista.editar) pintar(); },
+    function () { cargarPaquetes.va = false; if (paquetes === null) { paquetes = []; if (vista.tab === 'paquetes') pintar(); } if (vista.tab === 'paquetes') aviso('No he podido mirar el correo'); });
+}
 
 function cumplesHtml() {
   var l = datos.filter(function (f) { return f.categoria === 'Cumpleaños'; }).sort(function (a, b) { return (a.dias == null ? 9999 : a.dias) - (b.dias == null ? 9999 : b.dias); });
@@ -698,7 +792,7 @@ $('atras').onclick = function () { nav.back(); };
 $('mas').onclick = function () { abrirEditar(null); };
 $('ajustes').onclick = function () { abrirAjustes(); };
 $('refrescar').onclick = function () {
-  paquetes = null;
+  cargarPaquetes();
   recargar().then(function () { pintar(); aviso('Actualizado'); }, function () { aviso('Sin conexión: te enseño lo último que tenía'); });
 };
 Array.prototype.forEach.call(document.querySelectorAll('.pestanas button'), function (b) {
@@ -727,8 +821,9 @@ window.addEventListener('hashchange', procesarEnlace);
   $('hoyTxt').textContent = DIAS_SEM[d.getDay()] + ' ' + d.getDate() + ' ' + MESC[d.getMonth()];
   nav.push(estadoActual());
   var copia = leerCopia();
-  if (copia) { datos = copia.datos; recordatorios = copia.recordatorios || []; recalcularDias(); pintar(); }
+  if (copia) { datos = copia.datos; recordatorios = copia.recordatorios || []; paquetes = Array.isArray(copia.paquetes) ? copia.paquetes : null; recalcularDias(); pintar(); }
   else $('pantalla').innerHTML = '<div class="vacio">Cargando tus fechas…</div>';
+  cargarPaquetes();
   recargar().then(pintar, function (e) {
     if (e && e.clave) { pedirConfig('La clave guardada ya no vale. Pide el enlace nuevo.'); return; }
     if (copia) aviso('Sin conexión: te enseño lo último que tenía');
