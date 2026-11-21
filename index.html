@@ -166,7 +166,8 @@
   .recoger .botones { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
   .recoger .botones .btn { padding: 11px 12px; font-size: 14px; }
   .recoger .botones a { display: grid; place-items: center; padding: 0 12px; border-radius: 14px; background: var(--gris-suave); color: var(--tinta); font-weight: 600; font-size: 14px; text-decoration: none; }
-  .btn-ok.confirmar { background: var(--verde); }
+  .btn-marcar { background: transparent; color: var(--marca); box-shadow: inset 0 0 0 2px var(--marca); }
+  .btn-marcar.confirmar { background: var(--marca); color: var(--sobre-marca); box-shadow: none; }
   .barras { display: block; width: 100%; border: 0; padding: 10px; background: #ffffff; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--linea); }
   .barras img { display: block; width: 100%; height: auto; }
   .barras small { display: block; margin-top: 6px; font-size: 12px; color: #5b6670; text-align: center; }
@@ -523,7 +524,7 @@ function recogerHtml(q) {
     (q.codigo ? '<div><span aria-hidden="true">🔑</span><span>Código de recogida: <span class="codigo">' + esc(q.codigo) + '</span></span></div>' : '') +
     (q.barras ? '<button class="barras" data-barras aria-label="Código de barras: toca para verlo en grande"><img src="' + esc(q.barras) + '" alt="Código de barras de recogida" loading="lazy" onerror="this.parentNode.hidden=true"><small>Toca para verlo en grande y enseñarlo en el mostrador</small></button>' : '') +
     (q.ultimo ? '<div><span aria-hidden="true">📅</span><span>Último día: <b>' + diaSemana(q.ultimo) + '</b>' + (q.limite && q.limite !== q.ultimo ? ' <span style="color:var(--suave)">(el aviso dice «antes del ' + aFecha(q.limite).getDate() + '»)</span>' : '') + '</span></div>' : '') +
-    '</div><div class="botones"><button class="btn btn-ok" data-recogido="' + esc(q.id) + '">✓ Ya lo he recogido</button>' +
+    '</div><div class="botones"><button class="btn btn-marcar" data-recogido="' + esc(q.id) + '">Marcar como recogido</button>' +
     (q.enlace ? '<a href="' + esc(q.enlace) + '" target="_blank" rel="noopener">Correo</a>' : '') + '</div></article>';
   return h;
 }
@@ -543,7 +544,7 @@ function prepararPaquetes() {
   });
   Array.prototype.forEach.call(document.querySelectorAll('[data-recogido]'), function (b) {
     b.onclick = function () {
-      if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = 'Toca otra vez para confirmar'; b.classList.add('confirmar'); setTimeout(function () { if (b.isConnected) { delete b.dataset.seguro; b.textContent = '✓ Ya lo he recogido'; b.classList.remove('confirmar'); } }, 4000); return; }
+      if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = '¿Ya lo tienes? Toca otra vez'; b.classList.add('confirmar'); setTimeout(function () { if (b.isConnected) { delete b.dataset.seguro; b.textContent = 'Marcar como recogido'; b.classList.remove('confirmar'); } }, 4000); return; }
       var id = b.getAttribute('data-recogido');
       b.disabled = true; b.textContent = 'Guardando…';
       api.recogido(id).then(function () {
