@@ -416,6 +416,8 @@ function inicioHtml() {
       '<span class="barra"><i style="width:' + Math.round(progreso(prox) * 100) + '%"></i></span></button>';
   }
   h += recs.filter(function (q) { return urgentes.indexOf(q) < 0; }).map(recogerHtml).join('');
+  if (paquetes === null) h += '<div class="camino-ini"><span aria-hidden="true">📦</span><span>Mirando si tienes paquetes por recoger…</span></div>';
+  else if (cargarPaquetes.error && !recs.length) h += '<button class="camino-ini" id="reintentarPaq" style="width:100%;border:0;text-align:left"><span aria-hidden="true">📦</span><span>No he podido mirar tus paquetes</span><b>Reintentar</b></button>';
   h += caminoInicioHtml();
   h += '<div class="contadores">' +
     '<button class="contador alerta" data-foco="vencido" aria-pressed="' + (vista.foco === 'vencido') + '"><b>' + vencido + '</b><span>Vencido</span></button>' +
@@ -532,6 +534,7 @@ function caminoInicioHtml() {
   }).join('');
 }
 function prepararPaquetes() {
+  if ($('reintentarPaq')) $('reintentarPaq').onclick = function () { cargarPaquetes.error = false; if (paquetes && !paquetes.length) paquetes = null; pintar(); cargarPaquetes(); };
   Array.prototype.forEach.call(document.querySelectorAll('[data-barras]'), function (b) {
     b.onclick = function () {
       var g = b.classList.toggle('grande');
@@ -577,8 +580,8 @@ function paquetesHtml() {
 }
 function cargarPaquetes() {
   if (cargarPaquetes.va) return; cargarPaquetes.va = true;
-  api.paquetes().then(function (l) { cargarPaquetes.va = false; paquetes = l || []; guardarCopia(); if ((vista.tab === 'paquetes' || vista.tab === 'inicio') && !vista.ficha && !vista.editar) pintar(); },
-    function () { cargarPaquetes.va = false; if (paquetes === null) { paquetes = []; if (vista.tab === 'paquetes') pintar(); } if (vista.tab === 'paquetes') aviso('No he podido mirar el correo'); });
+  api.paquetes().then(function (l) { cargarPaquetes.va = false; cargarPaquetes.error = false; paquetes = l || []; guardarCopia(); if ((vista.tab === 'paquetes' || vista.tab === 'inicio') && !vista.ficha && !vista.editar) pintar(); },
+    function () { cargarPaquetes.va = false; cargarPaquetes.error = true; if (paquetes === null) paquetes = []; if ((vista.tab === 'paquetes' || vista.tab === 'inicio') && !vista.ficha && !vista.editar) pintar(); if (vista.tab === 'paquetes') aviso('No he podido mirar el correo'); });
 }
 
 function cumplesHtml() {
