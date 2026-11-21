@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mi Asistente</title>
+<meta name="theme-color" content="#1f5e57">
+<meta name="description" content="Tus fechas importantes, recordatorios y paquetes.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Agenda de bolsillo: tarjetas compactas sobre papel frío, barra de pestañas abajo como una app */
+  :root {
+    --papel: #f2f4f1; --tarjeta: #ffffff; --tinta: #1b2330; --suave: #5f6b78; --linea: #dfe4e2;
+    --marca: #1f5e57; --marca-suave: #dcebe7; --sobre-marca: #ffffff;
+    --rojo: #c0392b; --rojo-suave: #fbe3df; --ambar: #b7700b; --ambar-suave: #fbecd3;
+    --verde: #2f7d4f; --verde-suave: #dff1e5; --gris: #8a94a0; --gris-suave: #eceff1;
+    --c-doc: #3c5a99; --c-doc-s: #e2e8f6; --c-coche: #a05a14; --c-coche-s: #f6e8d8;
+    --c-seg: #1f6f78; --c-seg-s: #dceff0; --c-imp: #7a4a8c; --c-imp-s: #efe3f4;
+    --c-casa: #5b6b2e; --c-casa-s: #ebf0da; --c-salud: #b03a5b; --c-salud-s: #f8e0e7;
+    --c-cumple: #c2543a; --c-cumple-s: #fbe4dc; --c-otros: #5f6b78; --c-otros-s: #e8ebee;
+    --f-titulo: "Manrope", "Segoe UI", system-ui, sans-serif;
+    --f-texto: "Inter", "Segoe UI", system-ui, sans-serif;
+    --sombra: 0 1px 2px rgba(20, 30, 40, .06), 0 4px 14px rgba(20, 30, 40, .05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --papel: #12171d; --tarjeta: #1b222b; --tinta: #e7ecf1; --suave: #9ba7b4; --linea: #2b343f;
+      --marca: #5fb3a6; --marca-suave: #1d3532; --sobre-marca: #0d1a18;
+      --rojo: #f08a7c; --rojo-suave: #3d221f; --ambar: #f0b45a; --ambar-suave: #3a2c17;
+      --verde: #7cc896; --verde-suave: #1d3326; --gris: #8a94a0; --gris-suave: #262e38;
+      --c-doc: #9db4ea; --c-doc-s: #222c42; --c-coche: #e7a866; --c-coche-s: #3a2a1a;
+      --c-seg: #7fc7cf; --c-seg-s: #1b3235; --c-imp: #c9a0da; --c-imp-s: #2f2236;
+      --c-casa: #b9cb7d; --c-casa-s: #2a3020; --c-salud: #ec93ac; --c-salud-s: #3a2029;
+      --c-cumple: #f19a83; --c-cumple-s: #3b241d; --c-otros: #a7b1bc; --c-otros-s: #262e38;
+      --sombra: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --papel: #12171d; --tarjeta: #1b222b; --tinta: #e7ecf1; --suave: #9ba7b4; --linea: #2b343f;
+    --marca: #5fb3a6; --marca-suave: #1d3532; --sobre-marca: #0d1a18;
+    --rojo: #f08a7c; --rojo-suave: #3d221f; --ambar: #f0b45a; --ambar-suave: #3a2c17;
+    --verde: #7cc896; --verde-suave: #1d3326; --gris: #8a94a0; --gris-suave: #262e38;
+    --c-doc: #9db4ea; --c-doc-s: #222c42; --c-coche: #e7a866; --c-coche-s: #3a2a1a;
+    --c-seg: #7fc7cf; --c-seg-s: #1b3235; --c-imp: #c9a0da; --c-imp-s: #2f2236;
+    --c-casa: #b9cb7d; --c-casa-s: #2a3020; --c-salud: #ec93ac; --c-salud-s: #3a2029;
+    --c-cumple: #f19a83; --c-cumple-s: #3b241d; --c-otros: #a7b1bc; --c-otros-s: #262e38;
+    --sombra: 0 1px 2px rgba(0, 0, 0, .3); color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { overflow-x: hidden; max-width: 100%; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--papel); color: var(--tinta); font: 15px/1.45 var(--f-texto); overscroll-behavior-x: none; -webkit-tap-highlight-color: transparent; }
+  button, a, input, select, textarea { touch-action: manipulation; }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--papel); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .fila:focus-visible { outline: 2px solid var(--marca); outline-offset: 2px; }
+  .envoltura { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 8px 104px; }
+
+  /* Cabecera */
+  .cabecera { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--papel); }
+  .cabecera .envoltura { padding-block: 14px 8px; display: flex; align-items: center; gap: 10px; }
+  .cabecera h1 { font: 800 22px/1.15 var(--f-titulo); margin: 0; flex: 1; min-width: 0; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cabecera .fecha-hoy { font-size: 13px; color: var(--suave); white-space: nowrap; }
+  .refrescar { border: 0; background: none; width: 38px; height: 38px; border-radius: 12px; font-size: 18px; color: var(--suave); display: grid; place-items: center; }
+  .refrescar.girando { animation: girar 1s linear infinite; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .refrescar.girando { animation: none; opacity: .5; } }
+  .atras { border: 0; background: var(--tarjeta); width: 38px; height: 38px; border-radius: 12px; box-shadow: var(--sombra); display: grid; place-items: center; font-size: 18px; }
+  .demo { font-size: 12.5px; color: var(--suave); background: var(--gris-suave); border-radius: 10px; padding: 7px 10px; margin-bottom: 10px; }
+
+  /* Lo próximo */
+  .proximo { background: var(--marca); color: var(--sobre-marca); border-radius: 20px; padding: 18px; display: grid; gap: 12px; border: 0; width: 100%; text-align: left; }
+  .proximo .eti { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; opacity: .85; }
+  .proximo .fila-p { display: flex; align-items: flex-end; gap: 14px; }
+  .proximo .num { font: 800 52px/0.9 var(--f-titulo); font-variant-numeric: tabular-nums; }
+  .proximo .num small { display: block; font: 600 13px/1.2 var(--f-texto); opacity: .85; margin-top: 4px; }
+  .proximo .que { font: 700 18px/1.25 var(--f-titulo); min-width: 0; }
+  .proximo .que span { display: block; font: 500 13px/1.3 var(--f-texto); opacity: .85; margin-top: 3px; }
+  .barra { height: 6px; border-radius: 6px; background: rgba(255,255,255,.25); overflow: hidden; }
+  .barra i { display: block; height: 100%; background: var(--sobre-marca); border-radius: 6px; }
+
+  .contadores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .contador { background: var(--tarjeta); border: 1px solid var(--linea); border-radius: 14px; padding: 10px 12px; text-align: left; }
+  .contador b { display: block; font: 800 22px/1.1 var(--f-titulo); font-variant-numeric: tabular-nums; }
+  .contador span { font-size: 12.5px; color: var(--suave); }
+  .contador.alerta b { color: var(--rojo); }
+  .contador.aviso b { color: var(--ambar); }
+  .contador[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-suave); }
+
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 14px 0 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip { flex: none; min-height: 38px; border: 1px solid var(--linea); background: var(--tarjeta); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+  .chip[aria-pressed="true"] { background: var(--tinta); color: var(--papel); border-color: var(--tinta); }
+
+  .grupo { font: 700 12px/1 var(--f-texto); text-transform: uppercase; letter-spacing: .08em; color: var(--suave); margin: 20px 4px 8px; display: flex; justify-content: space-between; }
+  .lista { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .fila { background: var(--tarjeta); border-radius: 16px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: var(--sombra); border: 0; width: 100%; min-width: 0; min-height: 66px; text-align: left; }
+  .fila.hecha { opacity: .6; }
+  .icono { flex: none; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; }
+  .fila .texto { flex: 1; min-width: 0; }
+  .fila .texto b { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+  .fila .texto > span { display: block; }
+  .fila .texto span { font-size: 13px; color: var(--suave); }
+  .dias { flex: none; min-width: 58px; text-align: center; border-radius: 12px; padding: 6px 6px; font: 800 17px/1 var(--f-titulo); font-variant-numeric: tabular-nums; }
+  .dias small { display: block; font: 500 11px/1.3 var(--f-texto); margin-top: 2px; }
+  .d-rojo { background: var(--rojo-suave); color: var(--rojo); }
+  .d-ambar { background: var(--ambar-suave); color: var(--ambar); }
+  .d-verde { background: var(--verde-suave); color: var(--verde); }
+  .d-gris { background: var(--gris-suave); color: var(--gris); }
+  .fila .texto .insiste { display: inline-block; margin-top: 4px; font-size: 11.5px; font-weight: 600; color: var(--marca); background: var(--marca-suave); border-radius: 999px; padding: 2px 8px; }
+
+  .vacio { text-align: center; color: var(--suave); padding: 36px 12px; }
+
+  /* Calendario */
+  .mes { background: var(--tarjeta); border-radius: 16px; box-shadow: var(--sombra); padding: 12px 14px; }
+  .mes h3 { margin: 0 0 6px; font: 700 15px/1.3 var(--f-titulo); display: flex; justify-content: space-between; }
+  .mes h3 span { font: 500 12.5px var(--f-texto); color: var(--suave); }
+  .mes .ev { display: flex; gap: 10px; align-items: center; padding: 7px 0; border-top: 1px solid var(--linea); border-left: 0; border-right: 0; border-bottom: 0; background: none; width: 100%; text-align: left; }
+  .mes .ev:first-of-type { border-top: 0; }
+  .mes .dia { width: 34px; text-align: center; font: 800 17px/1 var(--f-titulo); font-variant-numeric: tabular-nums; }
+  .mes .dia small { display: block; font: 500 10.5px var(--f-texto); color: var(--suave); text-transform: uppercase; }
+  .mes .ev .texto { flex: 1; min-width: 0; font-size: 14px; }
+  .mes.vacia { padding: 9px 14px; box-shadow: none; background: transparent; border: 1px dashed var(--linea); }
+  .mes.vacia h3 { margin: 0; font-weight: 600; color: var(--suave); }
+  .punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+  /* Paquetes */
+  .paquete { background: var(--tarjeta); border-radius: 16px; box-shadow: var(--sombra); padding: 14px; display: grid; gap: 6px; }
+  .paquete .cab { display: flex; gap: 10px; align-items: center; }
+  .paquete .estado { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; }
+  .paquete .det { font-size: 13.5px; color: var(--suave); }
+  .paquete a { color: var(--marca); font-weight: 600; font-size: 13.5px; text-decoration: none; }
+  .nada-paq { font-size: 13.5px; color: var(--suave); padding: 4px 4px 2px; }
+  .rec { background: var(--tarjeta); border-radius: 16px; padding: 10px 10px 10px 12px; display: flex; gap: 12px; align-items: center; box-shadow: var(--sombra); min-width: 0; }
+  .rec .texto { flex: 1; min-width: 0; }
+  .rec .texto b { display: block; font-weight: 600; overflow-wrap: anywhere; }
+  .rec .texto span { font-size: 13px; color: var(--suave); }
+  .quitar { flex: none; border: 0; background: var(--gris-suave); color: var(--suave); min-width: 38px; height: 38px; border-radius: 12px; font-size: 14px; padding: 0 10px; }
+  .quitar.confirmar { background: var(--rojo-suave); color: var(--rojo); font-weight: 600; font-size: 13px; }
+  .consejo { margin-top: 10px; font-size: 13px; color: var(--suave); background: var(--tarjeta); border: 1px dashed var(--linea); border-radius: 12px; padding: 9px 12px; }
+  .paquete .estado { flex: none; white-space: nowrap; }
+
+  /* Ficha */
+  .ficha-cab { background: var(--tarjeta); border-radius: 20px; box-shadow: var(--sombra); padding: 18px; display: grid; gap: 14px; }
+  .ficha-cab .arriba { display: flex; gap: 12px; align-items: center; }
+  .ficha-cab .arriba .icono { width: 52px; height: 52px; font-size: 26px; border-radius: 14px; }
+  .ficha-cab h2 { margin: 0; font: 800 20px/1.2 var(--f-titulo); text-wrap: balance; }
+  .ficha-cab .cat { font-size: 13px; color: var(--suave); }
+  .grande { display: flex; align-items: baseline; gap: 8px; }
+  .grande b { font: 800 40px/1 var(--f-titulo); font-variant-numeric: tabular-nums; }
+  .grande span { color: var(--suave); }
+  .barra-f { height: 8px; border-radius: 8px; background: var(--gris-suave); overflow: hidden; }
+  .barra-f i { display: block; height: 100%; border-radius: 8px; }
+  .datos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px 14px; }
+  .datos div span { display: block; font-size: 12px; color: var(--suave); }
+  .datos div b { font-weight: 600; font-size: 14px; }
+  .notas { background: var(--gris-suave); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
+  .bloque { background: var(--tarjeta); border-radius: 16px; box-shadow: var(--sombra); padding: 14px; margin-top: 10px; }
+  .bloque h3 { margin: 0 0 8px; font: 700 14px var(--f-titulo); }
+  .hist { display: flex; justify-content: space-between; padding: 6px 0; border-top: 1px solid var(--linea); font-size: 14px; font-variant-numeric: tabular-nums; }
+  .hist:first-of-type { border-top: 0; }
+  .acciones { display: grid; gap: 10px; margin-top: 14px; }
+  .pie { position: sticky; bottom: 0; z-index: 4; margin: 14px -16px -8px; padding: 10px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to bottom, transparent, var(--papel) 14px); }
+  .pie .btn { width: 100%; box-shadow: 0 4px 14px rgba(20, 30, 40, .12); }
+  .envoltura.sin-pestanas { padding-bottom: 8px; }
+  .paquete .det { overflow-wrap: anywhere; }
+  .btn { border: 0; border-radius: 14px; padding: 14px; font-weight: 600; font-size: 15px; }
+  .btn-ok { background: var(--marca); color: var(--sobre-marca); }
+  .btn-sec { background: var(--tarjeta); border: 1px solid var(--linea); }
+  .btn-peligro { background: transparent; color: var(--rojo); border: 1px solid var(--rojo); }
+  .btn:disabled { opacity: .5; }
+
+  /* Formulario */
+  .form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  .campo label { display: block; font-size: 13px; font-weight: 600; color: var(--suave); margin-bottom: 6px; }
+  .campo { min-width: 0; }
+  .campo input, .campo select, .campo textarea { width: 100%; min-width: 0; max-width: 100%; padding: 12px; font: 16px var(--f-texto); border-radius: 12px; border: 1px solid var(--linea); background: var(--tarjeta); color: var(--tinta); }
+  .campo textarea { min-height: 84px; resize: vertical; }
+  .campo .ayuda { font-size: 12px; color: var(--suave); margin-top: 4px; }
+  .dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .cats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .cats button { min-width: 0; border: 1px solid var(--linea); background: var(--tarjeta); border-radius: 12px; padding: 8px 2px; font-size: 11.5px; display: grid; justify-items: center; gap: 2px; overflow: hidden; text-overflow: ellipsis; }
+  @media (max-width: 360px) { .cats button { font-size: 10px; letter-spacing: -.01em; } .cats button[aria-pressed="true"] { font-weight: 500; } }
+  @media (max-width: 340px) { .dos { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 380px) { .cabecera .fecha-hoy { display: none; } }
+  .cats button span { font-size: 20px; }
+  .cats button[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-suave); font-weight: 600; }
+
+  /* Barra de pestañas */
+  .pestanas { position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: var(--tarjeta); border-top: 1px solid var(--linea);
+              padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .pestanas nav { max-width: 560px; margin: 0 auto; display: grid; grid-template-columns: repeat(4, 1fr); }
+  .pestanas button { border: 0; background: none; padding: 8px 0 10px; display: grid; justify-items: center; gap: 2px; font-size: 11.5px; color: var(--suave); }
+  .pestanas button svg { width: 22px; height: 22px; }
+  .pestanas button[aria-current="page"] { color: var(--marca); font-weight: 600; }
+  .mas { position: fixed; z-index: 7; right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+         width: 56px; height: 56px; border-radius: 18px; border: 0; background: var(--marca); color: var(--sobre-marca); font-size: 28px; box-shadow: 0 6px 18px rgba(31, 94, 87, .35); }
+  .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(140px + env(safe-area-inset-bottom, 0px)); z-index: 9;
+           background: var(--tinta); color: var(--papel); padding: 10px 16px; border-radius: 12px; font-size: 14px; }
+  @media (prefers-reduced-motion: no-preference) { .fila, .chip, .contador { transition: transform .12s ease; } .fila:active { transform: scale(.985); } }
+</style>
+</head>
+<body>
+<header class="cabecera">
+  <div class="envoltura">
+    <button class="atras" id="atras" hidden aria-label="Atrás">←</button>
+    <h1 id="titulo">Mi Asistente</h1>
+    <span class="fecha-hoy" id="hoyTxt"></span>
+    <button class="refrescar" id="refrescar" aria-label="Actualizar">↻</button>
+    <button class="refrescar" id="ajustes" aria-label="Ajustes y compartir">⚙</button>
+  </div>
+</header>
+
+<main class="envoltura" id="pantalla"></main>
+
+<button class="mas" id="mas" aria-label="Añadir fecha">+</button>
+<div class="pestanas">
+  <nav aria-label="Secciones">
+    <button data-tab="inicio" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</button>
+    <button data-tab="calendario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendario</button>
+    <button data-tab="paquetes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>Paquetes</button>
+    <button data-tab="cumples"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21h16v-8H4zM4 15c2 1 3-1 4 0s2 1 4 0 3-1 4 0 2 1 4 0M12 13V9M12 6a1.5 1.5 0 0 1-1.5-1.5C10.5 3 12 2 12 2s1.5 1 1.5 2.5A1.5 1.5 0 0 1 12 6z"/></svg>Cumpleaños</button>
+  </nav>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ============ CONEXIÓN ============
+   En la vista previa se usan datos de ejemplo. Instalada en Google, la misma pantalla
+   llama a las funciones del programa (google.script.run). */
+var PREVIA = false;
+
+var CATS = {
+  'Documentos': { e: '🪪', c: 'doc' }, 'Coche': { e: '🚗', c: 'coche' }, 'Seguros': { e: '🛡️', c: 'seg' },
+  'Impuestos': { e: '🧾', c: 'imp' }, 'Casa': { e: '🏠', c: 'casa' }, 'Salud': { e: '🩺', c: 'salud' },
+  'Cumpleaños': { e: '🎂', c: 'cumple' }, 'Otros': { e: '📌', c: 'otros' }
+};
+var MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+var MESC = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var DIAS_SEM = ['dom','lun','mar','mié','jue','vie','sáb'];
+var ANOS_REP = { 'Anual': 1, 'Cada 2 años': 2, 'Cada 5 años': 5, 'Cada 10 años': 10 };
+
+function hoy() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
+function aFecha(t) { if (!t) return null; var p = t.split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+function aTexto(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function diasHasta(t) { var d = aFecha(t); return d ? Math.round((d - hoy()) / 86400000) : null; }
+function bonita(t) { var d = aFecha(t); return d ? d.getDate() + ' ' + MESC[d.getMonth()] + ' ' + d.getFullYear() : 'Sin fecha'; }
+
+/* La app habla con tu programa de Google mediante su dirección y tu clave secreta, que se guardan solo en este móvil. */
+var CONF_CLAVE = 'miAsistente.config';
+function leerConfig() { try { var c = JSON.parse(localStorage.getItem(CONF_CLAVE) || 'null'); return c && c.u && c.k ? c : null; } catch (e) { return null; } }
+function guardarConfig(c) { try { localStorage.setItem(CONF_CLAVE, JSON.stringify(c)); } catch (e) {} }
+function olvidarConfig() { try { localStorage.removeItem(CONF_CLAVE); localStorage.removeItem('miAsistente.v2'); } catch (e) {} }
+var config = leerConfig();
+
+function errorClave() { var e = new Error('La clave no es correcta'); e.clave = true; return e; }
+function pedir(promesa) {
+  return promesa.then(function (r) { if (!r.ok) throw new Error('El programa no responde (' + r.status + ')'); return r.json(); })
+    .then(function (j) { if (!j.ok) { if (j.clave) throw errorClave(); throw new Error(j.error || 'Error'); } return j.datos; });
+}
+function conTiempo(ms) { var c = new AbortController(); setTimeout(function () { c.abort(); }, ms); return c.signal; }
+function leer(accion, cfg) {
+  cfg = cfg || config;
+  return pedir(fetch(cfg.u + '?accion=' + encodeURIComponent(accion) + '&k=' + encodeURIComponent(cfg.k) + '&t=' + Date.now(), { signal: conTiempo(30000) }));
+}
+function cambiar(accion, datos) {
+  return pedir(fetch(config.u, { method: 'POST', body: JSON.stringify({ k: config.k, accion: accion, datos: datos }), signal: conTiempo(30000) }));
+}
+var api = {
+  todo: function () { return leer('todo'); },
+  fechas: function () { return leer('fechas'); },
+  recordatorios: function () { return leer('recordatorios'); },
+  paquetes: function () { return leer('paquetes'); },
+  guardar: function (d) { return cambiar('guardar', d); },
+  hecho: function (id) { return cambiar('hecho', id); },
+  pendiente: function (id) { return cambiar('pendiente', id); },
+  borrar: function (id) { return cambiar('borrar', id); },
+  borrarRec: function (id) { return cambiar('borrarRec', id); }
+};
+
+/* ============ NAVEGACIÓN (el botón «atrás» se queda dentro de la app) ============ */
+var nav = (function () {
+  var escucha = null;
+  window.addEventListener('popstate', function (e) {
+    if (/[#&]c=/.test(location.hash)) return; // es un enlace de configuración, no un «atrás»
+    escucha && escucha(e.state);
+  });
+  return {
+    push: function (st) { try { history.pushState(st, ''); } catch (err) {} },
+    back: function () { history.back(); },
+    onChange: function (f) { escucha = f; }
+  };
+})();
+
+/* ============ ESTADO ============ */
+var datos = [], paquetes = null, recordatorios = [];
+var vista = { tab: 'inicio', filtro: 'Todo', foco: '', ficha: '', editar: null };
+var $ = function (id) { return document.getElementById(id); };
+function esc(t) { return String(t == null ? '' : t).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function aviso(t) { var a = $('toast'); a.textContent = t; a.hidden = false; clearTimeout(aviso.t); aviso.t = setTimeout(function () { a.hidden = true; }, 2200); }
+function cat(f) { return CATS[f.categoria] || CATS['Otros']; }
+function iconoHtml(f) { var k = cat(f); return '<span class="icono" style="background:var(--c-' + k.c + '-s);color:var(--c-' + k.c + ')" aria-hidden="true">' + k.e + '</span>'; }
+function pendientes() { return datos.filter(function (f) { return f.estado !== 'Hecho'; }); }
+
+function claseDias(f) {
+  if (f.estado === 'Hecho' || f.dias == null) return 'd-gris';
+  if (f.dias <= 7) return 'd-rojo';
+  if (f.dias <= 30) return 'd-ambar';
+  return 'd-verde';
+}
+function textoDias(f) {
+  if (f.estado === 'Hecho') return '✓<small>hecho</small>';
+  if (f.dias == null) return '?<small>sin fecha</small>';
+  if (f.dias < 0) return (-f.dias) + '<small>vencido</small>';
+  if (f.dias === 0) return 'HOY<small>&nbsp;</small>';
+  if (f.dias > 365) { var a = f.dias / 365; if (a < 1.95) return '1<small>año</small>'; return String(Math.round(a * 10) / 10).replace('.', ',') + '<small>años</small>'; }
+  return f.dias + '<small>' + (f.dias === 1 ? 'día' : 'días') + '</small>';
+}
+function filaHtml(f) {
+  var sub = bonita(f.fecha) + (f.importe ? ' · ' + esc(f.importe) + ' €' : '');
+  var edad = edadTexto(f); if (edad) sub = edad + ' · ' + sub;
+  return '<button class="fila' + (f.estado === 'Hecho' ? ' hecha' : '') + '" data-id="' + esc(f.id) + '">' + iconoHtml(f) +
+    '<span class="texto"><b>' + esc(f.que) + '</b><span>' + sub + '</span>' +
+    (f.insistir === 'Sí' && f.estado !== 'Hecho' && f.dias != null && f.dias <= maxAviso(f) ? '<span class="insiste">↻ Insiste hasta que lo marques</span>' : '') +
+    '</span><span class="dias ' + claseDias(f) + '">' + textoDias(f) + '</span></button>';
+}
+function maxAviso(f) { var l = String(f.avisar).split(/[,;\s]+/).map(Number).filter(function (x) { return !isNaN(x); }); return l.length ? Math.max.apply(null, l) : 30; }
+function edadTexto(f) {
+  if (f.categoria !== 'Cumpleaños' || !f.anio || !f.fecha) return '';
+  return 'Cumple ' + (aFecha(f.fecha).getFullYear() - Number(f.anio));
+}
+function progreso(f) {
+  var anos = ANOS_REP[f.repetir] || 0;
+  if (f.dias == null) return 0;
+  var periodo = anos ? anos * 365 : Math.max(maxAviso(f), 30);
+  return Math.max(0, Math.min(1, 1 - f.dias / periodo));
+}
+
+/* ============ PANTALLAS ============ */
+function pintar() {
+  if (!config) return pedirConfig();
+  if (!$('hoyTxt').textContent) { var d0 = hoy(); $('hoyTxt').textContent = DIAS_SEM[d0.getDay()] + ' ' + d0.getDate() + ' ' + MESC[d0.getMonth()]; }
+  if (vista.ajustes) return pintarAjustes();
+  var p = $('pantalla');
+  var sub = !!(vista.ficha || vista.editar || vista.ajustes);
+  $('atras').hidden = !sub;
+  $('hoyTxt').hidden = sub;
+  $('ajustes').hidden = sub; $('refrescar').hidden = sub;
+  $('mas').hidden = sub || vista.tab === 'paquetes';
+  document.querySelector('.pestanas').hidden = sub;
+  p.classList.toggle('sin-pestanas', sub);
+  Array.prototype.forEach.call(document.querySelectorAll('.pestanas button'), function (b) {
+    if (b.getAttribute('data-tab') === vista.tab && !vista.ficha && !vista.editar) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+  });
+  var demo = PREVIA ? '<div class="demo">Vista previa con tus fechas. Puedes tocarlo todo, pero aquí no se guarda nada ni se envían avisos.</div>' : '';
+  if (vista.editar) { $('titulo').textContent = vista.editar.id ? 'Editar' : 'Nueva fecha'; p.innerHTML = formHtml(vista.editar); prepararForm(); }
+  else if (vista.ficha) { var f = datos.filter(function (x) { return x.id === vista.ficha; })[0]; if (!f) { vista.ficha = ''; return pintar(); } $('titulo').textContent = f.categoria || 'Detalle'; p.innerHTML = fichaHtml(f); prepararFicha(f); }
+  else if (vista.tab === 'calendario') { $('titulo').textContent = 'Calendario'; p.innerHTML = demo + calendarioHtml(); }
+  else if (vista.tab === 'paquetes') { $('titulo').textContent = 'Paquetes'; p.innerHTML = demo + paquetesHtml(); }
+  else if (vista.tab === 'cumples') { $('titulo').textContent = 'Cumpleaños'; p.innerHTML = demo + cumplesHtml(); }
+  else { $('titulo').textContent = 'Mi Asistente'; p.innerHTML = demo + inicioHtml(); prepararInicio(); }
+  Array.prototype.forEach.call(p.querySelectorAll('[data-id]'), function (el) { el.onclick = function () { abrirFicha(el.getAttribute('data-id')); }; });
+}
+
+function inicioHtml() {
+  var pend = pendientes().filter(function (f) { return f.dias != null; }).sort(function (a, b) { return a.dias - b.dias; });
+  var prox = pend.filter(function (f) { return f.dias >= 0; })[0] || pend[0];
+  var vencido = pend.filter(function (f) { return f.dias < 0; }).length;
+  var semana = pend.filter(function (f) { return f.dias >= 0 && f.dias <= 7; }).length;
+  var mes = pend.filter(function (f) { return f.dias >= 0 && f.dias <= 30; }).length;
+  var h = '';
+  if (prox) {
+    h += '<button class="proximo" data-id="' + esc(prox.id) + '"><span class="eti">Lo próximo</span>' +
+      '<span class="fila-p"><span class="num">' + (prox.dias <= 0 ? (prox.dias === 0 ? 'Hoy' : -prox.dias) : prox.dias) + '<small>' + (prox.dias === 0 ? '' : prox.dias < 0 ? 'días vencido' : prox.dias === 1 ? 'día' : 'días') + '</small></span>' +
+      '<span class="que">' + esc(prox.que) + '<span>' + cat(prox).e + ' ' + (edadTexto(prox) ? edadTexto(prox) + ' · ' : '') + bonita(prox.fecha) + '</span></span></span>' +
+      '<span class="barra"><i style="width:' + Math.round(progreso(prox) * 100) + '%"></i></span></button>';
+  }
+  h += '<div class="contadores">' +
+    '<button class="contador alerta" data-foco="vencido" aria-pressed="' + (vista.foco === 'vencido') + '"><b>' + vencido + '</b><span>Vencido</span></button>' +
+    '<button class="contador aviso" data-foco="semana" aria-pressed="' + (vista.foco === 'semana') + '"><b>' + semana + '</b><span>Esta semana</span></button>' +
+    '<button class="contador" data-foco="mes" aria-pressed="' + (vista.foco === 'mes') + '"><b>' + mes + '</b><span>Este mes</span></button></div>';
+  h += recordatoriosHtml();
+  var usadas = ['Todo'].concat(Object.keys(CATS).filter(function (c) { return datos.some(function (f) { return f.categoria === c; }); }));
+  h += '<div class="chips" role="group" aria-label="Filtrar por categoría">' + usadas.map(function (c) {
+    return '<button class="chip" data-filtro="' + esc(c) + '" aria-pressed="' + (vista.filtro === c) + '">' + (c === 'Todo' ? '' : CATS[c].e + ' ') + esc(c) + '</button>';
+  }).join('') + '</div>';
+
+  var lista = datos.filter(function (f) { return vista.filtro === 'Todo' || f.categoria === vista.filtro; });
+  if (vista.foco === 'vencido') lista = lista.filter(function (f) { return f.estado !== 'Hecho' && f.dias != null && f.dias < 0; });
+  if (vista.foco === 'semana') lista = lista.filter(function (f) { return f.estado !== 'Hecho' && f.dias != null && f.dias >= 0 && f.dias <= 7; });
+  if (vista.foco === 'mes') lista = lista.filter(function (f) { return f.estado !== 'Hecho' && f.dias != null && f.dias >= 0 && f.dias <= 30; });
+  var grupos = [
+    ['Vencido', function (f) { return f.dias < 0; }],
+    ['Esta semana', function (f) { return f.dias >= 0 && f.dias <= 7; }],
+    ['Este mes', function (f) { return f.dias > 7 && f.dias <= 30; }],
+    ['Próximos 3 meses', function (f) { return f.dias > 30 && f.dias <= 90; }],
+    ['De 3 meses a un año', function (f) { return f.dias > 90 && f.dias <= 365; }],
+    ['Más adelante', function (f) { return f.dias > 365; }]
+  ];
+  var conFecha = lista.filter(function (f) { return f.estado !== 'Hecho' && f.dias != null; }).sort(function (a, b) { return a.dias - b.dias; });
+  grupos.forEach(function (g) {
+    var l = conFecha.filter(g[1]);
+    if (l.length) h += '<div class="grupo"><span>' + g[0] + '</span><span>' + l.length + '</span></div><div class="lista">' + l.map(filaHtml).join('') + '</div>';
+  });
+  var sin = lista.filter(function (f) { return f.estado !== 'Hecho' && f.dias == null; });
+  if (sin.length) h += '<div class="grupo"><span>Falta poner la fecha</span><span>' + sin.length + '</span></div><div class="lista">' + sin.map(filaHtml).join('') + '</div>';
+  var hechas = lista.filter(function (f) { return f.estado === 'Hecho'; });
+  if (hechas.length && !vista.foco) h += '<div class="grupo"><span>Hechas</span><span>' + hechas.length + '</span></div><div class="lista">' + hechas.map(filaHtml).join('') + '</div>';
+  if (!lista.length || (vista.foco && !conFecha.length)) h += '<div class="vacio">Nada por aquí. ' + (vista.foco ? 'Toca el contador otra vez para ver todo.' : 'Pulsa + para añadir una fecha.') + '</div>';
+  return h;
+}
+function recordatoriosHtml() {
+  var ahora = Date.now();
+  var l = recordatorios.filter(function (r) { return new Date(r.cuando).getTime() > ahora - 60000; });
+  if (!l.length) return '<div class="consejo">💬 Escríbele a tu bot de Telegram «recuérdame mañana a las 18 llamar al taller» y saldrá aquí.</div>';
+  return '<div class="grupo"><span>⏰ Recordatorios</span><span>' + l.length + '</span></div><div class="lista">' + l.map(function (r) {
+    return '<div class="rec"><span class="icono" style="background:var(--marca-suave);color:var(--marca)" aria-hidden="true">⏰</span>' +
+      '<span class="texto"><b>' + esc(r.que) + '</b><span>' + esc(cuandoRec(r.cuando)) + '</span></span>' +
+      '<button class="quitar" data-rec="' + esc(r.id) + '" aria-label="Borrar recordatorio">✕</button></div>';
+  }).join('') + '</div>';
+}
+function cuandoRec(t) {
+  var p = t.split('T'), d = aFecha(p[0]), dif = Math.round((d - hoy()) / 86400000);
+  var dia = dif === 0 ? 'Hoy' : dif === 1 ? 'Mañana' : dif === 2 ? 'Pasado mañana' : DIAS_SEM[d.getDay()].charAt(0).toUpperCase() + DIAS_SEM[d.getDay()].slice(1) + ' ' + d.getDate() + ' ' + MESC[d.getMonth()];
+  return dia + ' a las ' + (p[1] || '09:00');
+}
+function prepararInicio() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-rec]'), function (b) {
+    b.onclick = function () {
+      if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = '¿Borrar?'; b.classList.add('confirmar'); setTimeout(function () { if (b.isConnected) { delete b.dataset.seguro; b.textContent = '✕'; b.classList.remove('confirmar'); } }, 3500); return; }
+      b.disabled = true;
+      api.borrarRec(b.getAttribute('data-rec')).then(function () { aviso('Recordatorio borrado'); return recargar(); }).then(pintar, fallo);
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-filtro]'), function (b) { b.onclick = function () { vista.filtro = b.getAttribute('data-filtro'); pintar(); }; });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-foco]'), function (b) { b.onclick = function () { var v = b.getAttribute('data-foco'); vista.foco = vista.foco === v ? '' : v; pintar(); }; });
+}
+
+function calendarioHtml() {
+  var h = '<div class="lista">', base = hoy();
+  for (var i = 0; i < 12; i++) {
+    var m = new Date(base.getFullYear(), base.getMonth() + i, 1);
+    var eventos = pendientes().filter(function (f) { var d = aFecha(f.fecha); return d && d.getFullYear() === m.getFullYear() && d.getMonth() === m.getMonth(); })
+      .sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+    h += '<section class="mes' + (eventos.length ? '' : ' vacia') + '"><h3>' + MESES[m.getMonth()].charAt(0).toUpperCase() + MESES[m.getMonth()].slice(1) + ' ' + m.getFullYear() +
+      '<span>' + (eventos.length ? eventos.length + (eventos.length === 1 ? ' fecha' : ' fechas') : 'Nada') + '</span></h3>';
+    eventos.forEach(function (f) {
+      var d = aFecha(f.fecha), k = cat(f);
+      h += '<button class="ev" data-id="' + esc(f.id) + '"><span class="dia">' + d.getDate() + '<small>' + DIAS_SEM[d.getDay()] + '</small></span>' +
+        '<span class="punto" style="background:var(--c-' + k.c + ')"></span><span class="texto">' + k.e + ' ' + esc(f.que) + '</span></button>';
+    });
+    h += '</section>';
+  }
+  var mas = pendientes().filter(function (f) { return f.dias != null && aFecha(f.fecha) >= new Date(base.getFullYear(), base.getMonth() + 12, 1); });
+  if (mas.length) h += '<div class="grupo"><span>Más adelante</span><span>' + mas.length + '</span></div>' + mas.sort(function (a, b) { return a.dias - b.dias; }).map(filaHtml).join('');
+  return h + '</div>';
+}
+
+function paquetesHtml() {
+  if (paquetes === null) { cargarPaquetes(); return '<div class="vacio">Mirando tu correo…</div>'; }
+  var recoger = paquetes.filter(function (q) { return q.tipo !== 'camino'; });
+  var camino = paquetes.filter(function (q) { return q.tipo === 'camino'; }).sort(function (a, b) { return a.fecha < b.fecha ? -1 : 1; });
+  if (!paquetes.length) return '<div class="vacio">📦 No tienes paquetes en camino ni pendientes de recoger.<br>Lo reviso cada día a las 8:00 y a las 17:00.</div>';
+  function tarjeta(q) {
+    var esCamino = q.tipo === 'camino';
+    var urgente = /fallida|aduana|pago|direcci|caducado|debería/i.test(q.estado);
+    var clase = urgente ? 'd-rojo' : esCamino ? (/hoy/i.test(q.estado) ? 'd-ambar' : 'd-verde') : 'd-ambar';
+    return '<article class="paquete"><div class="cab"><span class="icono" style="background:var(--c-' + (esCamino ? 'seg' : 'coche') + '-s)" aria-hidden="true">' + (esCamino ? '🚚' : '📦') + '</span>' +
+      '<div class="texto" style="flex:1;min-width:0"><b>' + esc(q.asunto) + '</b><div class="det">' + esc(q.remitente) + (q.fecha ? ' · ' + bonita(q.fecha) : '') + '</div></div>' +
+      '<span class="estado ' + clase + '">' + esc(q.estado) + '</span></div>' +
+      (q.detalle ? '<div class="det">' + esc(q.detalle) + (q.ejemplo ? ' <i>(ejemplo)</i>' : '') + '</div>' : '') +
+      (q.enlace ? '<a href="' + esc(q.enlace) + '" target="_blank" rel="noopener">Abrir el correo →</a>' : '') + '</article>';
+  }
+  var h = '';
+  h += '<div class="grupo"><span>Para recoger</span><span>' + recoger.length + '</span></div>';
+  h += recoger.length ? '<div class="lista">' + recoger.map(tarjeta).join('') + '</div>' : '<div class="nada-paq">Nada pendiente de recoger ✓</div>';
+  h += '<div class="grupo"><span>En camino</span><span>' + camino.length + '</span></div>';
+  h += camino.length ? '<div class="lista">' + camino.map(tarjeta).join('') + '</div>' : '<div class="nada-paq">No hay envíos en camino</div>';
+  return h;
+}
+function cargarPaquetes() { api.paquetes().then(function (l) { paquetes = l || []; guardarCopia(); if (vista.tab === 'paquetes' && !vista.ficha && !vista.editar) pintar(); }, function () { paquetes = []; aviso('No he podido mirar el correo'); }); }
+
+function cumplesHtml() {
+  var l = datos.filter(function (f) { return f.categoria === 'Cumpleaños'; }).sort(function (a, b) { return (a.dias == null ? 9999 : a.dias) - (b.dias == null ? 9999 : b.dias); });
+  if (!l.length) return '<div class="vacio">🎂 Aún no hay cumpleaños. Pulsa + para añadir uno.</div>';
+  var sinAnio = l.filter(function (f) { return !f.anio; }).map(function (f) { return f.que.replace(/^Cumpleaños de /, ''); });
+  var aviso = sinAnio.length ? 'Te falta el año de nacimiento de ' + (sinAnio.length > 1 ? sinAnio.slice(0, -1).join(', ') + ' y ' + sinAnio[sinAnio.length - 1] : sinAnio[0]) + '. Ponlo en su ficha → Editar y verás cuántos cumple.' : '';
+  return (aviso ? '<div class="demo">' + esc(aviso) + '</div>' : '') + '<div class="lista">' + l.map(filaHtml).join('') + '</div>';
+}
+
+function fichaHtml(f) {
+  var k = cat(f), pct = Math.round(progreso(f) * 100);
+  var color = f.estado === 'Hecho' || f.dias == null ? 'var(--gris)' : f.dias <= 7 ? 'var(--rojo)' : f.dias <= 30 ? 'var(--ambar)' : 'var(--verde)';
+  var grande = f.estado === 'Hecho' ? '<b>✓</b><span>hecho</span>' : f.dias == null ? '<b>?</b><span>falta poner la fecha</span>' :
+    f.dias < 0 ? '<b>' + (-f.dias) + '</b><span>días vencido</span>' : f.dias === 0 ? '<b>Hoy</b>' : '<b>' + f.dias + '</b><span>' + (f.dias === 1 ? 'día' : 'días') + ' para el ' + bonita(f.fecha) + '</span>';
+  var h = '<div class="ficha-cab"><div class="arriba">' + iconoHtml(f) + '<div><h2>' + esc(f.que) + '</h2><div class="cat">' + esc(f.categoria) + (edadTexto(f) ? ' · ' + edadTexto(f) : '') + '</div></div></div>' +
+    '<div class="grande">' + grande + '</div>' +
+    (f.dias != null && f.estado !== 'Hecho' ? '<div class="barra-f"><i style="width:' + pct + '%;background:' + color + '"></i></div>' : '') +
+    '<div class="datos"><div><span>Fecha</span><b>' + bonita(f.fecha) + '</b></div><div><span>Se repite</span><b>' + esc(f.repetir || 'No') + '</b></div>' +
+    '<div><span>Te aviso</span><b>' + esc(String(f.avisar).split(',').join(', ')) + ' días antes</b></div><div><span>Insistir</span><b>' + (f.insistir === 'Sí' ? 'Sí, hasta que lo marques' : 'No') + '</b></div>' +
+    (f.importe ? '<div><span>Importe</span><b>' + esc(f.importe) + ' €</b></div>' : '') + '</div>' +
+    (f.notas ? '<div class="notas">' + esc(f.notas) + '</div>' : '') + '</div>';
+  var hist = f.historial || [];
+  h += '<div class="bloque"><h3>Historial</h3>' + (hist.length ? hist.map(function (x) {
+    return '<div class="hist"><span>' + bonita(x.fecha) + (x.nota ? ' · ' + esc(x.nota) : '') + '</span><b>' + (x.importe ? esc(x.importe) + ' €' : '') + '</b></div>';
+  }).join('') : '<div class="nada" style="font-size:13px;color:var(--suave)">Cuando lo marques como hecho, quedará apuntado aquí con su fecha e importe.</div>') + '</div>';
+  h += '<div class="acciones">' +
+    (f.estado === 'Hecho' ? '<button class="btn btn-sec" id="b-pend">Volver a poner como pendiente</button>' : '') +
+    '<button class="btn btn-sec" id="b-editar">Editar</button><button class="btn btn-peligro" id="b-borrar">Borrar</button></div>';
+  if (f.estado !== 'Hecho' && f.fecha) {
+    h += '<div class="pie"><button class="btn btn-ok" id="b-hecho">✓ Ya está hecho' + (ANOS_REP[f.repetir] && f.dias != null && f.dias <= maxAviso(f) ? ' (pasa al siguiente)' : '') + '</button></div>';
+  }
+  return h;
+}
+function prepararFicha(f) {
+  if ($('b-hecho')) $('b-hecho').onclick = function () { ocupado(true, 'Guardando…'); api.hecho(f.id).then(function () { aviso('¡Hecho! ✓'); return recargar(); }).then(function () { ocupado(false); pintar(); }, fallo); };
+  if ($('b-pend')) $('b-pend').onclick = function () { ocupado(true); api.pendiente(f.id).then(recargar).then(function () { ocupado(false); pintar(); }, fallo); };
+  $('b-editar').onclick = function () { abrirEditar(f); };
+  $('b-borrar').onclick = function () {
+    var b = $('b-borrar');
+    if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = 'Toca otra vez para borrarlo'; setTimeout(function () { if ($('b-borrar')) { delete $('b-borrar').dataset.seguro; $('b-borrar').textContent = 'Borrar'; } }, 4000); return; }
+    ocupado(true); api.borrar(f.id).then(function () { aviso('Borrado'); return recargar(); }).then(function () { ocupado(false); nav.back(); }, fallo);
+  };
+}
+
+function formHtml(d) {
+  var cats = Object.keys(CATS).map(function (c) { return '<button type="button" data-cat="' + esc(c) + '" aria-pressed="' + (d.categoria === c) + '"><span>' + CATS[c].e + '</span>' + esc(c) + '</button>'; }).join('');
+  var rep = ['No', 'Anual', 'Cada 2 años', 'Cada 5 años', 'Cada 10 años'].map(function (r) { return '<option' + (d.repetir === r ? ' selected' : '') + '>' + r + '</option>'; }).join('');
+  return '<form class="form" id="formu">' +
+    '<div class="campo"><label>Categoría</label><div class="cats">' + cats + '</div></div>' +
+    '<div class="campo"><label for="f-que">¿Qué es?</label><input id="f-que" value="' + esc(d.que) + '" placeholder="Ej.: Renovar el pasaporte" autocomplete="off"></div>' +
+    '<div class="dos"><div class="campo"><label for="f-fecha">Fecha</label><input id="f-fecha" type="date" value="' + esc(d.fecha) + '"></div>' +
+    '<div class="campo"><label for="f-rep">¿Se repite?</label><select id="f-rep">' + rep + '</select></div></div>' +
+    '<div class="campo" id="campo-anio"' + (d.categoria === 'Cumpleaños' ? '' : ' hidden') + '><label for="f-anio">Año de nacimiento (opcional)</label><input id="f-anio" inputmode="numeric" maxlength="4" value="' + esc(d.anio) + '" placeholder="Ej.: 1985"></div>' +
+    '<div class="dos"><div class="campo"><label for="f-avisar">Avisarme (días antes)</label><input id="f-avisar" inputmode="numeric" value="' + esc(d.avisar) + '" placeholder="30,7,1"></div>' +
+    '<div class="campo"><label for="f-ins">Insistir</label><select id="f-ins"><option' + (d.insistir === 'Sí' ? ' selected' : '') + '>Sí</option><option' + (d.insistir !== 'Sí' ? ' selected' : '') + '>No</option></select></div></div>' +
+    '<div class="campo"><div class="ayuda">«Insistir»: te lo recuerdo cada 3 días desde el primer aviso hasta que lo marques como hecho.</div></div>' +
+    '<div class="campo"><label for="f-imp">Importe (€)</label><input id="f-imp" inputmode="decimal" value="' + esc(d.importe) + '" placeholder="Opcional"></div>' +
+    '<div class="campo"><label for="f-notas">Notas</label><textarea id="f-notas" placeholder="Qué tienes que hacer, a quién llamar…">' + esc(d.notas) + '</textarea></div>' +
+    '<div class="pie"><button class="btn btn-ok" type="submit">Guardar</button></div></form>';
+}
+function prepararForm() {
+  var d = vista.editar;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-cat]'), function (b) {
+    b.onclick = function () {
+      d.categoria = b.getAttribute('data-cat');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-cat]'), function (x) { x.setAttribute('aria-pressed', x === b); });
+      $('campo-anio').hidden = d.categoria !== 'Cumpleaños';
+      if (d.categoria === 'Cumpleaños' && !d.id) {
+        $('f-rep').value = 'Anual'; $('f-avisar').value = '7,1'; $('f-ins').value = 'No';
+        if (!$('f-que').value) $('f-que').value = 'Cumpleaños de ';
+      }
+    };
+  });
+  $('formu').onsubmit = function (e) {
+    e.preventDefault();
+    var que = $('f-que').value.trim();
+    if (!que) { aviso('Escribe qué es'); $('f-que').focus(); return; }
+    var anio = $('f-anio').value.trim();
+    if (anio && !/^(19|20)\d\d$/.test(anio)) { aviso('El año tiene que ser de 4 cifras, como 1985'); return; }
+    var dato = { id: d.id || '', que: que, categoria: d.categoria || 'Otros', fecha: $('f-fecha').value, repetir: $('f-rep').value,
+                 avisar: $('f-avisar').value.trim() || '30,7,1', insistir: $('f-ins').value, importe: $('f-imp').value.trim(), notas: $('f-notas').value.trim(), anio: anio };
+    ocupado(true, 'Guardando…');
+    api.guardar(dato).then(function () { aviso('Guardado ✓'); return recargar(); }).then(function () { ocupado(false); nav.back(); }, fallo);
+  };
+}
+
+
+/* ============ CONFIGURACIÓN (primera vez) Y AJUSTES ============ */
+function b64(o) { return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function desdeB64(t) { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return JSON.parse(decodeURIComponent(escape(atob(t)))); }
+function enlaceCompartir() { return location.origin + location.pathname + '#c=' + b64({ u: config.u, k: config.k }); }
+
+function pedirConfig(mensaje) {
+  config = null;
+  ['atras', 'mas', 'ajustes', 'refrescar'].forEach(function (id) { $(id).hidden = true; });
+  document.querySelector('.pestanas').hidden = true;
+  $('titulo').textContent = 'Mi Asistente';
+  var p = $('pantalla'); p.classList.add('sin-pestanas');
+  p.innerHTML = '<div class="ficha-cab" style="margin-top:6px"><h2>Conecta la app</h2>' +
+    '<p style="margin:0;color:var(--suave)">Lo más fácil es abrir el <b>enlace de configuración</b> que te han pasado (sale en Ajustes en cualquier móvil ya conectado). Si no lo tienes, pega aquí los dos datos:</p></div>' +
+    (mensaje ? '<div class="demo" style="margin-top:10px;background:var(--rojo-suave);color:var(--rojo)">' + esc(mensaje) + '</div>' : '') +
+    '<form class="form" id="formConf" style="margin-top:14px">' +
+    '<div class="campo"><label for="c-u">Dirección del programa</label><input id="c-u" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/…/exec"></div>' +
+    '<div class="campo"><label for="c-k">Clave secreta</label><input id="c-k" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="La clave que te dio «crearClaveApp»"></div>' +
+    '<div class="pie"><button class="btn btn-ok" type="submit">Conectar</button></div></form>';
+  $('formConf').onsubmit = function (e) {
+    e.preventDefault();
+    var u = $('c-u').value.trim(), k = $('c-k').value.trim();
+    if (!/^https:\/\/script\.google(usercontent)?\.com\/.+\/exec$/.test(u)) { aviso('La dirección tiene que acabar en /exec'); return; }
+    if (!k) { aviso('Falta la clave'); return; }
+    probarYGuardar({ u: u, k: k });
+  };
+}
+
+function probarYGuardar(cfg) {
+  ocupado(true, 'Comprobando…');
+  leer('comprobar', cfg).then(function () {
+    config = cfg; guardarConfig(cfg); ocupado(false);
+    vista.tab = 'inicio'; vista.ficha = ''; vista.editar = null; vista.ajustes = false; nav.push(estadoActual());
+    aviso('Conectada ✓');
+    $('pantalla').innerHTML = '<div class="vacio">Cargando tus fechas…</div>';
+    return recargar().then(pintar);
+  }, function (e) {
+    ocupado(false);
+    pedirConfig(e && e.clave ? 'La clave no es correcta.' : 'No he podido conectar: revisa la dirección y que el programa esté publicado para «Cualquiera».');
+  });
+}
+
+function abrirAjustes() { ir({ ajustes: true, ficha: '', editar: null }); }
+function pintarAjustes() {
+  $('titulo').textContent = 'Ajustes';
+  ['atras'].forEach(function (id) { $(id).hidden = false; });
+  ['mas', 'ajustes', 'refrescar', 'hoyTxt'].forEach(function (id) { $(id).hidden = true; });
+  document.querySelector('.pestanas').hidden = true;
+  var p = $('pantalla'); p.classList.add('sin-pestanas');
+  var enlace = enlaceCompartir();
+  p.innerHTML = '<div class="ficha-cab"><h2>Conectar otro móvil</h2>' +
+    '<p style="margin:0;color:var(--suave)">Mándale este enlace. Al abrirlo en otro móvil (por ejemplo, el de tu pareja), la app queda conectada y se ve lo mismo que aquí. <b>Lleva la clave dentro: no se lo pases a nadie más.</b></p>' +
+    '<div class="notas" style="overflow-wrap:anywhere;font-size:12.5px" id="enlaceTxt">' + esc(enlace) + '</div>' +
+    '<div class="acciones" style="margin-top:0"><button class="btn btn-ok" id="copiar">Copiar enlace</button>' +
+    '<a class="btn btn-sec" style="text-align:center;text-decoration:none;color:var(--tinta)" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent('Mi Asistente: abre este enlace en el móvil y la app quedará conectada. ' + enlace) + '">Enviar por WhatsApp</a></div></div>' +
+    '<div class="bloque"><h3>Instalar en el móvil</h3><p style="margin:0;font-size:14px;color:var(--suave)">En Chrome: menú ⋮ → <b>Instalar aplicación</b> (o «Añadir a pantalla de inicio»). Se abrirá a pantalla completa, sin barra de direcciones.</p></div>' +
+    '<div class="acciones"><button class="btn btn-peligro" id="olvidar">Desconectar este móvil</button></div>';
+  $('copiar').onclick = function () {
+    var ok = function () { aviso('Enlace copiado ✓'); };
+    if (navigator.clipboard) navigator.clipboard.writeText(enlace).then(ok, function () { seleccionar(); });
+    else seleccionar();
+    function seleccionar() { var r = document.createRange(); r.selectNodeContents($('enlaceTxt')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); aviso('Mantén pulsado para copiarlo'); }
+  };
+  $('olvidar').onclick = function () {
+    var b = $('olvidar');
+    if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = 'Toca otra vez para desconectar'; return; }
+    olvidarConfig(); datos = []; recordatorios = []; paquetes = null; vista.ajustes = false; pedirConfig();
+  };
+}
+
+/* ============ ACCIONES ============ */
+function ocupado(si, texto) {
+  Array.prototype.forEach.call(document.querySelectorAll('.btn'), function (b) {
+    b.disabled = si;
+    if (si && texto && b.classList.contains('btn-ok')) { b.dataset.txt = b.textContent; b.textContent = texto; }
+    if (!si && b.dataset.txt) { b.textContent = b.dataset.txt; delete b.dataset.txt; }
+  });
+}
+function fallo(e) { if (e && e.clave) { pedirConfig('La clave guardada ya no vale. Pide el enlace nuevo.'); return; } ocupado(false); aviso('No se ha podido guardar: ' + (e && e.message ? e.message : 'revisa la conexión e inténtalo otra vez')); }
+
+/* Copia en el móvil de lo último que se vio: la app abre al instante y luego se actualiza */
+var CLAVE = 'miAsistente.v2';
+function guardarCopia() { try { localStorage.setItem(CLAVE, JSON.stringify({ datos: datos, paquetes: paquetes, recordatorios: recordatorios, cuando: Date.now() })); } catch (e) {} }
+function leerCopia() { try { var c = JSON.parse(localStorage.getItem(CLAVE) || 'null'); return c && Array.isArray(c.datos) ? c : null; } catch (e) { return null; } }
+function recalcularDias() { datos.forEach(function (f) { f.dias = diasHasta(f.fecha); }); }
+
+function recargar() {
+  $('refrescar').classList.add('girando');
+  return api.todo().then(function (r) {
+      datos = (r && r.fechas) || []; recordatorios = (r && r.recordatorios) || []; guardarCopia(); $('refrescar').classList.remove('girando'); },
+    function (e) { $('refrescar').classList.remove('girando'); throw e; });
+}
+
+/* Navegación: cada pantalla queda en el historial, así «atrás» vuelve a la anterior sin salir de la app */
+function estadoActual() { return { tab: vista.tab, ficha: vista.ficha || '', editar: !!vista.editar, ajustes: !!vista.ajustes }; }
+function ir(cambios) {
+  Object.assign(vista, cambios);
+  nav.push(estadoActual()); pintar(); window.scrollTo(0, 0);
+}
+function abrirFicha(id) { ir({ ficha: id, editar: null, ajustes: false }); }
+function abrirEditar(f) {
+  var nuevo = f ? Object.assign({}, f) : { id: '', que: '', categoria: vista.tab === 'cumples' ? 'Cumpleaños' : (vista.filtro !== 'Todo' ? vista.filtro : 'Documentos'), fecha: '', repetir: 'No', avisar: '30,7,1', insistir: 'Sí', importe: '', notas: '', anio: '' };
+  if (!f && nuevo.categoria === 'Cumpleaños') { nuevo.repetir = 'Anual'; nuevo.avisar = '7,1'; nuevo.insistir = 'No'; nuevo.que = 'Cumpleaños de '; }
+  ir({ editar: nuevo });
+}
+var ultimaSalida = 0;
+nav.onChange(function (st) {
+  if (!st) {
+    // Ya no queda pantalla anterior: el primer «atrás» avisa y el segundo sale
+    if (Date.now() - ultimaSalida < 2500) { nav.back(); return; }
+    ultimaSalida = Date.now();
+    vista.tab = 'inicio'; vista.ficha = ''; vista.editar = null; vista.foco = ''; vista.ajustes = false;
+    nav.push(estadoActual()); pintar(); window.scrollTo(0, 0);
+    aviso('Pulsa «atrás» otra vez para salir');
+    return;
+  }
+  vista.editar = st.editar && vista.editar ? vista.editar : null;
+  vista.ficha = st.ficha || '';
+  vista.ajustes = !!st.ajustes;
+  vista.tab = st.tab || 'inicio';
+  pintar(); window.scrollTo(0, 0);
+});
+$('atras').onclick = function () { nav.back(); };
+$('mas').onclick = function () { abrirEditar(null); };
+$('ajustes').onclick = function () { abrirAjustes(); };
+$('refrescar').onclick = function () {
+  paquetes = null;
+  recargar().then(function () { pintar(); aviso('Actualizado'); }, function () { aviso('Sin conexión: te enseño lo último que tenía'); });
+};
+Array.prototype.forEach.call(document.querySelectorAll('.pestanas button'), function (b) {
+  b.onclick = function () {
+    var t = b.getAttribute('data-tab');
+    if (t === vista.tab && !vista.ficha && !vista.editar) { window.scrollTo(0, 0); return; }
+    if (t === 'paquetes' && paquetes === null) cargarPaquetes();
+    ir({ tab: t, ficha: '', editar: null, foco: '', ajustes: false });
+  };
+});
+/* Enlace de configuración (#c=…): al abrirlo, la app queda conectada en este móvil */
+function procesarEnlace() {
+  var m = /[#&]c=([A-Za-z0-9_-]+)/.exec(location.hash);
+  if (!m) return false;
+  history.replaceState(null, '', location.pathname);
+  try { var cfg = desdeB64(m[1]); if (cfg.u && cfg.k) { $('pantalla').innerHTML = '<div class="vacio">Conectando…</div>'; probarYGuardar(cfg); return true; } }
+  catch (e) {}
+  pedirConfig('El enlace de configuración no está completo. Pídelo otra vez.');
+  return true;
+}
+window.addEventListener('hashchange', procesarEnlace);
+(function () {
+  if (procesarEnlace()) return;
+  if (!config) { pedirConfig(); return; }
+  var d = hoy();
+  $('hoyTxt').textContent = DIAS_SEM[d.getDay()] + ' ' + d.getDate() + ' ' + MESC[d.getMonth()];
+  nav.push(estadoActual());
+  var copia = leerCopia();
+  if (copia) { datos = copia.datos; recordatorios = copia.recordatorios || []; recalcularDias(); pintar(); }
+  else $('pantalla').innerHTML = '<div class="vacio">Cargando tus fechas…</div>';
+  recargar().then(pintar, function (e) {
+    if (e && e.clave) { pedirConfig('La clave guardada ya no vale. Pide el enlace nuevo.'); return; }
+    if (copia) aviso('Sin conexión: te enseño lo último que tenía');
+    else $('pantalla').innerHTML = '<div class="vacio">No he podido cargar tus fechas.<br>Comprueba la conexión y pulsa ↻ arriba.</div>';
+  });
+})();
+if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); }); }
+</script>
+</body>
+</html>
