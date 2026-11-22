@@ -145,6 +145,34 @@
   .quitar { flex: none; border: 0; background: var(--gris-suave); color: var(--suave); min-width: 38px; height: 38px; border-radius: 12px; font-size: 14px; padding: 0 10px; }
   .quitar.confirmar { background: var(--rojo-suave); color: var(--rojo); font-weight: 600; font-size: 13px; }
   .consejo { margin-top: 10px; font-size: 13px; color: var(--suave); background: var(--tarjeta); border: 1px dashed var(--linea); border-radius: 12px; padding: 9px 12px; }
+  a.consejo { display: flex; gap: 10px; align-items: center; text-decoration: none; min-height: 48px; }
+  a.consejo span:first-child { flex: 1; min-width: 0; }
+  a.consejo b { flex: none; color: var(--marca); font-size: 13px; white-space: nowrap; }
+  .rec-cab { display: flex; justify-content: space-between; align-items: center; margin: 20px 4px 8px; }
+  .rec-cab .grupo { margin: 0; min-width: 0; }
+  .boton-mini { white-space: nowrap; border: 0; background: var(--marca-suave); color: var(--marca); font-weight: 700; font-size: 13px; border-radius: 999px; padding: 8px 14px; min-height: 36px; }
+  .rec .para { display: inline-block; margin-left: 6px; font-size: 11.5px; font-weight: 600; border-radius: 999px; padding: 1px 8px; background: var(--gris-suave); color: var(--suave); }
+  .consejo-rec { margin-top: 10px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .consejo-rec .boton-mini { width: 100%; min-height: 46px; border-radius: 12px; font-size: 14.5px; }
+  .personas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .personas button { min-width: 0; border: 1px solid var(--linea); background: var(--tarjeta); color: var(--tinta); border-radius: 12px; padding: 10px 4px; font-size: 14px; font-weight: 600; }
+  .personas button[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-suave); color: var(--marca); }
+  .rapidos { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .rapidos button { border: 1px solid var(--linea); background: var(--tarjeta); color: var(--tinta); border-radius: 999px; padding: 7px 12px; font-size: 13.5px; min-height: 36px; }
+  .botones-rec { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
+  .rec-cab .acc { display: flex; gap: 6px; }
+  .dictar { width: 100%; border: 0; border-radius: 14px; padding: 14px; font-weight: 700; font-size: 15px; background: var(--marca-suave); color: var(--marca); display: flex; gap: 8px; align-items: center; justify-content: center; }
+  .dictar.escuchando { background: var(--rojo-suave); color: var(--rojo); }
+  .dictar.escuchando::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--rojo); animation: latir 1s ease-in-out infinite; }
+  @keyframes latir { 50% { opacity: .25; } }
+  @media (prefers-reduced-motion: reduce) { .dictar.escuchando::before { animation: none; } }
+  .voz { font-size: 13.5px; color: var(--suave); margin-top: 8px; min-height: 1.3em; overflow-wrap: anywhere; }
+  .voz.ok { color: var(--verde); font-weight: 600; }
+  .voz.mal { color: var(--rojo); }
+  .movil { font-size: 13px; color: var(--suave); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .movil button { border: 1px solid var(--linea); background: var(--tarjeta); color: var(--tinta); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; min-height: 34px; }
+  .movil button[aria-pressed="true"] { border-color: var(--marca); background: var(--marca-suave); color: var(--marca); }
+  .nuevo-rec { display: block; margin-top: 8px; text-align: right; font-size: 13px; font-weight: 600; color: var(--marca); text-decoration: none; padding: 6px 4px; }
   .paquete .estado { flex: none; white-space: nowrap; }
 
   /* Paquete para recoger (Inicio y pestaña Paquetes) */
@@ -265,6 +293,8 @@
 /* ============ CONEXIÓN ============
    En la vista previa se usan datos de ejemplo. Instalada en Google, la misma pantalla
    llama a las funciones del programa (google.script.run). */
+/* Tu bot de Telegram: el aviso de recordatorios lleva directo a él */
+var BOT_TELEGRAM = 'hector_miasistente_bot';
 var PREVIA = false;
 
 var CATS = {
@@ -313,7 +343,9 @@ var api = {
   pendiente: function (id) { return cambiar('pendiente', id); },
   borrar: function (id) { return cambiar('borrar', id); },
   borrarRec: function (id) { return cambiar('borrarRec', id); },
-  recogido: function (id) { return cambiar('recogido', id); }
+  recogido: function (id) { return cambiar('recogido', id); },
+  nuevoRec: function (d) { return cambiar('nuevoRec', d); },
+  entenderRec: function (d) { return cambiar('entenderRec', d); }
 };
 
 /* ============ NAVEGACIÓN (el botón «atrás» se queda dentro de la app) ============ */
@@ -379,6 +411,7 @@ function pintar() {
   if (!config) return pedirConfig();
   if (!$('hoyTxt').textContent) { var d0 = hoy(); $('hoyTxt').textContent = DIAS_SEM[d0.getDay()] + ' ' + d0.getDate() + ' ' + MESC[d0.getMonth()]; }
   if (vista.ajustes) return pintarAjustes();
+  if (dictado && !(vista.editar && vista.editar.tipo === 'rec')) { try { dictado.abort(); } catch (e) {} dictado = null; }
   var p = $('pantalla');
   var sub = !!(vista.ficha || vista.editar || vista.ajustes);
   $('atras').hidden = !sub;
@@ -391,7 +424,8 @@ function pintar() {
     if (b.getAttribute('data-tab') === vista.tab && !vista.ficha && !vista.editar) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   var demo = PREVIA ? '<div class="demo">Vista previa con tus fechas. Puedes tocarlo todo, pero aquí no se guarda nada ni se envían avisos.</div>' : '';
-  if (vista.editar) { $('titulo').textContent = vista.editar.id ? 'Editar' : 'Nueva fecha'; p.innerHTML = formHtml(vista.editar); prepararForm(); }
+  if (vista.editar && vista.editar.tipo === 'rec') { $('titulo').textContent = 'Nuevo recordatorio'; p.innerHTML = recFormHtml(vista.editar); prepararRecForm(); }
+  else if (vista.editar) { $('titulo').textContent = vista.editar.id ? 'Editar' : 'Nueva fecha'; p.innerHTML = formHtml(vista.editar); prepararForm(); }
   else if (vista.ficha) { var f = datos.filter(function (x) { return x.id === vista.ficha; })[0]; if (!f) { vista.ficha = ''; return pintar(); } $('titulo').textContent = f.categoria || 'Detalle'; p.innerHTML = fichaHtml(f); prepararFicha(f); }
   else if (vista.tab === 'calendario') { $('titulo').textContent = 'Calendario'; p.innerHTML = demo + calendarioHtml(); }
   else if (vista.tab === 'paquetes') { $('titulo').textContent = 'Paquetes'; p.innerHTML = demo + paquetesHtml(); }
@@ -457,12 +491,16 @@ function inicioHtml() {
 function recordatoriosHtml() {
   var ahora = Date.now();
   var l = recordatorios.filter(function (r) { return new Date(r.cuando).getTime() > ahora - 60000; });
-  if (!l.length) return '<div class="consejo">💬 Escríbele a tu bot de Telegram «recuérdame mañana a las 18 llamar al taller» y saldrá aquí.</div>';
-  return '<div class="grupo"><span>⏰ Recordatorios</span><span>' + l.length + '</span></div><div class="lista">' + l.map(function (r) {
+  var bot = 'https://t.me/' + BOT_TELEGRAM;
+  var mic = puedeDictar() ? '<button class="boton-mini" data-dictar-rec>🎤 Dictar</button>' : '';
+  if (!l.length) return '<div class="consejo-rec"><div class="' + (mic ? 'botones-rec' : '') + '">' + mic + '<button class="boton-mini" data-nuevo-rec>⏰ + Escribir</button></div>' +
+    '<a class="consejo" href="' + bot + '" target="_blank" rel="noopener" style="margin-top:0"><span>💬 O escríbele a tu bot de Telegram «recuérdame mañana a las 18 llamar al taller».</span><b>Abrir →</b></a></div>';
+  return '<div class="rec-cab"><div class="grupo"><span>⏰ Recordatorios</span></div><div class="acc">' + (mic ? '<button class="boton-mini" data-dictar-rec aria-label="Dictar recordatorio">🎤</button>' : '') + '<button class="boton-mini" data-nuevo-rec>+ Nuevo</button></div></div><div class="lista">' + l.map(function (r) {
+    var para = r.para === 'Irene' ? 'Para Irene' : r.para === 'Los dos' ? 'Los dos' : '';
     return '<div class="rec"><span class="icono" style="background:var(--marca-suave);color:var(--marca)" aria-hidden="true">⏰</span>' +
-      '<span class="texto"><b>' + esc(r.que) + '</b><span>' + esc(cuandoRec(r.cuando)) + '</span></span>' +
+      '<span class="texto"><b>' + esc(r.que) + '</b><span>' + esc(cuandoRec(r.cuando)) + (para ? '<span class="para">' + para + '</span>' : '') + '</span></span>' +
       '<button class="quitar" data-rec="' + esc(r.id) + '" aria-label="Borrar recordatorio">✕</button></div>';
-  }).join('') + '</div>';
+  }).join('') + '</div><a class="nuevo-rec" href="' + bot + '" target="_blank" rel="noopener">💬 También por Telegram →</a>';
 }
 function cuandoRec(t) {
   var p = t.split('T'), d = aFecha(p[0]), dif = Math.round((d - hoy()) / 86400000);
@@ -470,6 +508,8 @@ function cuandoRec(t) {
   return dia + ' a las ' + (p[1] || '09:00');
 }
 function prepararInicio() {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-nuevo-rec]'), function (b) { b.onclick = function () { abrirNuevoRec(false); }; });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-dictar-rec]'), function (b) { b.onclick = function () { abrirNuevoRec(true); }; });
   Array.prototype.forEach.call(document.querySelectorAll('[data-rec]'), function (b) {
     b.onclick = function () {
       if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = '¿Borrar?'; b.classList.add('confirmar'); setTimeout(function () { if (b.isConnected) { delete b.dataset.seguro; b.textContent = '✕'; b.classList.remove('confirmar'); } }, 3500); return; }
@@ -625,6 +665,129 @@ function prepararFicha(f) {
     var b = $('b-borrar');
     if (!b.dataset.seguro) { b.dataset.seguro = '1'; b.textContent = 'Toca otra vez para borrarlo'; setTimeout(function () { if ($('b-borrar')) { delete $('b-borrar').dataset.seguro; $('b-borrar').textContent = 'Borrar'; } }, 4000); return; }
     ocupado(true); api.borrar(f.id).then(function () { aviso('Borrado'); return recargar(); }).then(function () { ocupado(false); nav.back(); }, fallo);
+  };
+}
+
+/* ============ NUEVO RECORDATORIO (para Héctor, Irene o los dos) ============ */
+var CLAVE_PARA = 'miAsistente.para';
+function dosCifras(n) { return String(n).padStart(2, '0'); }
+function horaTexto(d) { return dosCifras(d.getHours()) + ':' + dosCifras(d.getMinutes()); }
+var CLAVE_QUIEN = 'miAsistente.quien', dictado = null;
+function leerLocal(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+function guardarLocal(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+function puedeDictar() { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); }
+function abrirNuevoRec(conVoz) {
+  var para = leerLocal(CLAVE_PARA) || leerLocal(CLAVE_QUIEN) || 'Héctor';
+  var d = new Date(Date.now() + 3600000); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0);
+  ir({ editar: { tipo: 'rec', que: '', dia: aTexto(d), hora: horaTexto(d), para: para } });
+  if (conVoz) dictar();
+}
+/* Dictado por voz (Chrome): «recuérdale a Irene mañana a las 10 llamar al colegio» → rellena el formulario para revisarlo */
+function dictar() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR || !$('r-voz')) return;
+  if (dictado) { try { dictado.stop(); } catch (e) {} return; }
+  var r = new SR(); dictado = r;
+  r.lang = 'es-ES'; r.interimResults = true; r.maxAlternatives = 1; r.continuous = false;
+  var final = '', boton = $('r-dictar'), voz = $('r-voz');
+  function estado(t, clase) { if (!$('r-voz')) return; voz.textContent = t; voz.className = 'voz' + (clase ? ' ' + clase : ''); }
+  boton.classList.add('escuchando'); boton.textContent = 'Te escucho… (toca para parar)';
+  estado('Di por ejemplo: «recuérdale a Irene mañana a las 10 llamar al colegio»');
+  r.onresult = function (e) {
+    var t = ''; for (var i = 0; i < e.results.length; i++) { t += e.results[i][0].transcript; if (e.results[i].isFinal) final = t; }
+    estado('«' + t + '»');
+  };
+  r.onerror = function (e) {
+    estado(e.error === 'not-allowed' || e.error === 'service-not-allowed' ? 'Chrome no tiene permiso para el micrófono. Toca el candado de la barra de direcciones → Micrófono → Permitir.'
+      : e.error === 'no-speech' ? 'No te he oído. Toca 🎤 y habla otra vez.' : e.error === 'network' ? 'Para dictar hace falta conexión a internet.' : 'No he podido escucharte (' + e.error + ').', 'mal');
+  };
+  r.onend = function () {
+    dictado = null;
+    if ($('r-dictar')) { $('r-dictar').classList.remove('escuchando'); $('r-dictar').textContent = '🎤 Dictar otra vez'; }
+    if (!final || !$('r-voz')) return;
+    estado('Entendiendo «' + final + '»…');
+    api.entenderRec({ texto: final, quien: leerLocal(CLAVE_QUIEN) || 'Héctor' }).then(function (x) {
+      if (!$('r-voz') || !vista.editar || vista.editar.tipo !== 'rec') return;
+      var d = vista.editar;
+      if (x.que) $('r-que').value = x.que.charAt(0).toUpperCase() + x.que.slice(1);
+      d.para = x.para || d.para; marcarPara(d.para);
+      if (x.cuando) { var c = x.cuando.split('T'); $('r-dia').value = c[0]; $('r-hora').value = c[1]; }
+      if (x.entendido) estado('✓ Entendido: ' + (x.que || '') + ' · ' + cuandoRec(x.cuando).toLowerCase() + ' · ' + (d.para === 'Los dos' ? 'para los dos' : 'para ' + d.para) + '. Revísalo y pulsa Guardar.', 'ok');
+      else estado('He apuntado el qué, pero no he pillado el día o la hora: ponlos abajo y pulsa Guardar.', 'mal');
+    }, function () { $('r-que').value = final; estado('No he podido interpretarlo: revisa los datos y pulsa Guardar.', 'mal'); });
+  };
+  try { r.start(); } catch (e) { dictado = null; estado('No he podido abrir el micrófono.', 'mal'); }
+}
+function marcarPara(p) {
+  Array.prototype.forEach.call(document.querySelectorAll('[data-para]'), function (x) { x.setAttribute('aria-pressed', x.getAttribute('data-para') === p); });
+  if ($('r-ayuda')) $('r-ayuda').textContent = ayudaPara(p);
+}
+function rapidosRec() {
+  var ahora = new Date(), l = [];
+  var en1 = new Date(ahora.getTime() + 3600000); l.push(['En 1 hora', aTexto(en1), horaTexto(en1)]);
+  if (ahora.getHours() < 17) l.push(['Esta tarde 17:00', aTexto(ahora), '17:00']);
+  else if (ahora.getHours() < 21) l.push(['Esta noche 21:00', aTexto(ahora), '21:00']);
+  var man = new Date(hoy().getTime() + 86400000);
+  l.push(['Mañana 9:00', aTexto(man), '09:00']); l.push(['Mañana 18:00', aTexto(man), '18:00']);
+  return l;
+}
+function recFormHtml(d) {
+  var personas = [['Héctor', 'Héctor'], ['Irene', 'Irene'], ['Los dos', 'Los dos']].map(function (x) {
+    return '<button type="button" data-para="' + x[0] + '" aria-pressed="' + (d.para === x[0]) + '">' + x[1] + '</button>';
+  }).join('');
+  var quien = leerLocal(CLAVE_QUIEN);
+  var movil = '<div class="movil"><span>📱 Este móvil es de:</span>' + ['Héctor', 'Irene'].map(function (q) {
+    return '<button type="button" data-quien="' + q + '" aria-pressed="' + (quien === q) + '">' + q + '</button>'; }).join('') +
+    (quien ? '' : '<span class="nota-quien">(así sé quién es «recuérdame»)</span>') + '</div>';
+  return '<form class="form" id="formRec">' +
+    (puedeDictar() ? '<div class="campo"><button type="button" class="dictar" id="r-dictar">🎤 Dictar</button><div class="voz" id="r-voz">Toca y di, por ejemplo: «recuérdanos el sábado a las 12 comprar el regalo»</div></div>' : '') +
+    movil +
+    '<div class="campo"><label for="r-que">¿Qué hay que recordar?</label><input id="r-que" value="' + esc(d.que) + '" placeholder="Ej.: Llamar al taller" autocomplete="off" maxlength="200"></div>' +
+    '<div class="campo"><label>¿Cuándo?</label><div class="rapidos">' + rapidosRec().map(function (r) {
+      return '<button type="button" data-rapido="' + r[1] + 'T' + r[2] + '">' + r[0] + '</button>'; }).join('') + '</div>' +
+    '<div class="dos"><input id="r-dia" type="date" aria-label="Día" value="' + esc(d.dia) + '"><input id="r-hora" type="time" aria-label="Hora" value="' + esc(d.hora) + '"></div></div>' +
+    '<div class="campo"><label>¿A quién aviso?</label><div class="personas">' + personas + '</div>' +
+    '<div class="ayuda" id="r-ayuda">' + ayudaPara(d.para) + '</div></div>' +
+    '<div class="pie"><button class="btn btn-ok" type="submit">Guardar recordatorio</button></div></form>';
+}
+function ayudaPara(p) {
+  return p === 'Irene' ? 'A Irene: le aparece en su Google Calendar (con su aviso de siempre) y le llega un correo justo a esa hora.'
+    : p === 'Los dos' ? 'A Héctor: Telegram y Calendar. A Irene: le aparece en su Google Calendar y le llega un correo a esa hora.'
+    : 'A Héctor: mensaje de Telegram y aviso de Calendar a esa hora.';
+}
+function prepararRecForm() {
+  var d = vista.editar;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-para]'), function (b) {
+    b.onclick = function () {
+      d.para = b.getAttribute('data-para');
+      Array.prototype.forEach.call(document.querySelectorAll('[data-para]'), function (x) { x.setAttribute('aria-pressed', x === b); });
+      $('r-ayuda').textContent = ayudaPara(d.para);
+    };
+  });
+  if ($('r-dictar')) $('r-dictar').onclick = dictar;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-quien]'), function (b) {
+    b.onclick = function () {
+      var q = b.getAttribute('data-quien'); guardarLocal(CLAVE_QUIEN, q);
+      Array.prototype.forEach.call(document.querySelectorAll('[data-quien]'), function (x) { x.setAttribute('aria-pressed', x === b); });
+      var nota = document.querySelector('.nota-quien'); if (nota) nota.remove();
+      if (!leerLocal(CLAVE_PARA)) { d.para = q; marcarPara(q); }
+    };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-rapido]'), function (b) {
+    b.onclick = function () { var v = b.getAttribute('data-rapido').split('T'); $('r-dia').value = v[0]; $('r-hora').value = v[1]; };
+  });
+  $('formRec').onsubmit = function (e) {
+    e.preventDefault();
+    var que = $('r-que').value.trim(), dia = $('r-dia').value, hora = $('r-hora').value;
+    if (!que) { aviso('Escribe qué hay que recordar'); $('r-que').focus(); return; }
+    if (!dia || !hora) { aviso('Pon el día y la hora'); return; }
+    var p = dia.split('-'), h = hora.split(':');
+    if (new Date(+p[0], +p[1] - 1, +p[2], +h[0], +h[1]).getTime() < Date.now() - 60000) { aviso('Esa hora ya ha pasado'); return; }
+    try { localStorage.setItem(CLAVE_PARA, d.para); } catch (err) {}
+    ocupado(true, 'Guardando…');
+    api.nuevoRec({ que: que, cuando: dia + 'T' + hora.slice(0, 5), para: d.para })
+      .then(function () { aviso('Recordatorio apuntado ✓'); return recargar(); })
+      .then(function () { ocupado(false); nav.back(); }, fallo);
   };
 }
 
